@@ -145,7 +145,11 @@ The physics was right in the first pass. Everything after that was presentation.
 - [Martian Mono](https://fonts.google.com/specimen/Martian+Mono), OFL
 
 Both libraries are vendored in `vendor/` rather than installed, which is what
-lets the project run with no build step. Their licences are in `LICENSE`.
+lets the project run with no build step. Their notices are in
+[THIRD-PARTY.md](THIRD-PARTY.md).
+
+The photographs in `frames/` are not cleared for reuse. Replace them before
+you publish a fork.
 
 ## Licence
 

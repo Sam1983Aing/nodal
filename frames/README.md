@@ -1,7 +1,7 @@
 # Sample frames
 
 Drop a photograph here for each focal length and it takes over the hover panel
-in chapter 05 automatically — no code change.
+in chapter 05 automatically, no code change.
 
 | File | Aspect | Notes |
 |---|---|---|
@@ -13,7 +13,7 @@ The panel is `object-fit: cover`, so anything close to 3:2 works; it crops from
 the centre. At a 1500px viewport the box renders about **705 × 470**, so
 1600 × 1067 or larger keeps it sharp on a 2x display.
 
-All three are in place at 1536 x 1024, which is exactly 3:2 — `object-fit:
+All three are in place at 1536 x 1024, which is exactly 3:2, so `object-fit:
 cover` crops nothing.
 
 Until a file exists, the panel falls back to a generated placeholder: the frame
