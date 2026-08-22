@@ -9,3 +9,8 @@ nodal-standalone-clean.html
 .claude/
 __pycache__/
 *.pyc
+
+# Reconstructed earlier states. Kept locally for reference, not part of the
+# shipped page.
+first-iteration/
+second-iteration/

@@ -120,21 +120,14 @@ IIFE and turns imports into registry lookups, producing one classic script.
 `tools/README.md` explains the preconditions that makes safe, and the two regex
 traps that cost an hour.
 
-## Earlier iterations
+## One number worth knowing
 
-Two earlier states of the page are preserved, reconstructed from the build
-transcript, both runnable:
+Between the first working version of this page and the shipped one,
+`styles.css` went from 16 KB to 59 KB and `src/main.js` from 26 KB to 78 KB.
+Over the same stretch `src/optics.js` and `src/conductor.js` did not change by a
+single byte.
 
-- `first-iteration/` at the point it first worked. Instrument Serif, cyan
-  accent, "Nothing in here is straight."
-- `second-iteration/` after the first design pass. Archivo, amber accent, a
-  dead-on front hero that was later abandoned.
-
-The comparison is the useful part. Between the first iteration and the shipped
-version, `styles.css` went from 16 KB to 59 KB and `main.js` from 26 KB to 78
-KB, while `src/optics.js` and `src/conductor.js` did not change by a single
-byte. The physics was right in the first pass. Everything after that was
-presentation.
+The physics was right in the first pass. Everything after that was presentation.
 
 ## Notes before you reuse this
 
