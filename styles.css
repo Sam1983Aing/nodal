@@ -1,0 +1,1568 @@
+/*
+ * NODAL — styles.
+ *
+ * The page has two grounds, not one. Optical chapters run on near-black where
+ * glass and light can be seen; document chapters run on warm paper where a
+ * specification can be read. A single `--plate` value (0 = black, 1 = paper)
+ * is written by JS every frame, and every colour below derives from it, so the
+ * whole page turns as one thing rather than as a set of themed components.
+ *
+ * Hierarchy on either ground comes from fractional alpha of ONE foreground
+ * colour, never from separate grey values. That is what keeps a two-ground
+ * page from needing two palettes.
+ */
+
+:root {
+  /* ---- the two plates. Constants; nothing reads these directly ---- */
+  --black-bg:      8, 9, 10;         /* #08090a */
+  --black-fg:      232, 229, 222;    /* #e8e5de */
+  --black-accent:  140, 176, 219;    /* #8cb0db — the coating bloom, hue 213 */
+
+  --paper-bg:      237, 233, 224;    /* #ede9e0 — warm bone, never white */
+  --paper-fg:      28, 29, 31;       /* #1c1d1f — ink, never pure black */
+  --paper-accent:  46, 79, 118;      /* #2e4f76 — same hue, dark enough for paper */
+
+  /* ---- live tokens, written by JS each frame. Black is the initial state ---- */
+  --plate: 0;
+  --turn: 0;      /* 1 at the midpoint of a plate turn, 0 at either end */
+  --bg-rgb:     8, 9, 10;
+  --fg-rgb:     232, 229, 222;
+  --accent-rgb: 140, 176, 219;
+
+  /* Dark ink on light paper washes out faster than light ink on dark, so the
+     alphas open up as the page turns. Same hierarchy, both grounds. */
+  --a-muted:   calc(0.55 + 0.10 * var(--plate));
+  --a-faint:   calc(0.30 + 0.17 * var(--plate));
+  --a-rule:    calc(0.12 + 0.07 * var(--plate));
+  --a-whisper: calc(0.05 + 0.03 * var(--plate));
+
+  --bg:      rgb(var(--bg-rgb));
+  --fg:      rgb(var(--fg-rgb));
+  --accent:  rgb(var(--accent-rgb));
+  --muted:   rgba(var(--fg-rgb), var(--a-muted));
+  --faint:   rgba(var(--fg-rgb), var(--a-faint));
+  --rule:    rgba(var(--fg-rgb), var(--a-rule));
+  --whisper: rgba(var(--fg-rgb), var(--a-whisper));
+
+  /* ---- type ----
+     One family, monospaced, everywhere.
+     
+     Every number on this page is a reading — T1.86, 1.5 µm, 0.45 m, 300°,
+     0.8 module — and fixed-pitch figures are what a measuring instrument
+     prints. A proportional face makes those look like marketing; this makes
+     the spec strip look like a datasheet, which is what it is.
+     
+     `wdth` runs 75–112.5, so the contrast is drawn-in labels against
+     full-width display. Mono carries far more advance per character than a
+     proportional face, so every size below is smaller than its predecessor
+     and the line-heights are looser: the same px in mono is a much wider and
+     tighter-set line. */
+  --sans: 'Martian Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+  --wide: 'wdth' 100,   'wght' 620;   /* display  */
+  --semi: 'wdth'  96,   'wght' 620;   /* headings */
+  --tech: 'wdth'  79,   'wght' 450;   /* small technical labels */
+  --read: 'wdth'  88,   'wght' 380;   /* running copy */
+
+  /* One slope, shared by every clamp, so the whole scale moves on one curve.
+     It carries PX, not a bare ratio: dividing a length by a number keeps the
+     unit. Every multiplier below is therefore the pixel distance that size
+     travels between 375px and 1600px, never a rem-like factor. Getting this
+     wrong silently pins the whole scale near its minimum. */
+  --slope: calc((100vw - 375px) / (1600 - 375));
+
+  --t-display: clamp(3.5rem, calc(3.5rem + 152 * var(--slope)), 13rem);
+  --t-title:   clamp(1.75rem, calc(1.75rem + 33 * var(--slope)), 3.85rem);
+  --t-sub:     clamp(1.5rem, calc(1.5rem + 17.6 * var(--slope)), 2.6rem);
+  --t-body:    clamp(0.78rem, calc(0.78rem + 2 * var(--slope)), 0.9rem);
+  --t-label:   0.625rem;    /* 10px */
+  /* How far a line sits below its own mask when hidden.
+     It must clear the mask, and the mask is TALLER than the line box by the
+     descender padding on `.line` — so 105% (the obvious value) leaves the tops
+     of the glyphs peeking out the bottom. Worst case across the display sizes
+     works out at 123%; this carries a margin. The extra travel happens entirely
+     out of sight, so the visible motion is unchanged. */
+  --mask-hide: 128%;
+
+  --t-micro:   0.5625rem;   /*  9px — fixed pitch has no tight pairs, so it
+                               holds up small better than a proportional face */
+
+  /* ---- motion ----
+     Three curves, not one. A page where every transition shares a single
+     easing has no body language, whatever that easing is. */
+  --ease-reveal: cubic-bezier(0.16, 1, 0.30, 1);      /* expo out — entrances */
+  --ease-settle: cubic-bezier(0.34, 1.42, 0.44, 1);   /* overshoot — UI, hovers */
+  --ease-plate:  cubic-bezier(0.76, 0, 0.24, 1);      /* expo in-out — the turn */
+
+  --gutter: clamp(1.5rem, 5vw, 5.5rem);
+  --col:    min(52ch, 88vw);   /* 46ch left "aperture." alone on a sixth line */
+}
+
+* { box-sizing: border-box; }
+
+html {
+  background: var(--bg);
+  scroll-behavior: auto;   /* Lenis owns scroll; native smoothing fights it */
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--fg);
+  font-family: var(--sans);
+  font-variation-settings: var(--read);
+  font-size: var(--t-body);
+  font-variant-numeric: tabular-nums;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  overflow-x: hidden;
+}
+
+::selection { background: rgba(var(--fg-rgb), 0.22); color: var(--bg); }
+
+/* The page carries its own progress, so the native indicator is redundant
+   furniture. Hidden in every engine rather than merely styled thin. */
+::-webkit-scrollbar { width: 0; height: 0; display: none; }
+html { scrollbar-width: none; }
+body { -ms-overflow-style: none; }
+
+:focus-visible {
+  outline: 1px solid var(--accent);
+  outline-offset: 2px;
+}
+
+#vh-probe {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  visibility: hidden;
+  z-index: -1;
+}
+
+/* The object sits behind everything, always. Chapters scroll over it rather
+   than each owning their own canvas — one persistent scene, never swapped. */
+#stage {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+  z-index: 2;
+}
+
+/* ---------------- wordmark ----------------
+   Set behind the object at a size that owns the whole frame. Kept at a low
+   alpha of the foreground so it reads as ground rather than as a competing
+   headline, and it retires as soon as the first chapter has something to say.
+   Each letter rides up through its own overflow mask, with the tracking
+   closing from open to tight as it arrives, which is what stops the entrance
+   reading as five things sliding rather than one word landing. */
+.wordmark {
+  position: fixed;
+  inset: 0;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  font-variation-settings: var(--wide);
+  font-size: 25vw;
+  line-height: 0.78;
+  color: rgba(var(--fg-rgb), 0.085);
+  opacity: var(--wordmark-o, 0);
+  letter-spacing: 0.06em;
+  transition: letter-spacing 2.1s var(--ease-reveal);
+}
+body.is-wordmark .wordmark { letter-spacing: -0.025em; }
+
+.wm-letter { display: block; overflow: hidden; }
+.wm-letter > i {
+  display: block;
+  font-style: normal;
+  transform: translateY(112%);
+  transition: transform 1.55s var(--ease-reveal);
+}
+body.is-wordmark .wm-letter > i { transform: translateY(0); }
+.wm-letter:nth-child(1) > i { transition-delay: 0.06s; }
+.wm-letter:nth-child(2) > i { transition-delay: 0.14s; }
+.wm-letter:nth-child(3) > i { transition-delay: 0.22s; }
+.wm-letter:nth-child(4) > i { transition-delay: 0.30s; }
+.wm-letter:nth-child(5) > i { transition-delay: 0.38s; }
+
+/* ---------------- overlays ---------------- */
+
+/* A pool of light for the object to sit in, on the black plates only.
+   This replaces a vignette. A vignette is subtractive: it darkens the corners,
+   which makes an already-empty ground feel emptier. Lifting the middle gives
+   the object a floor instead of taking away its edges. */
+.pool {
+  position: fixed;
+  inset: 0;
+  z-index: 3;
+  pointer-events: none;
+  opacity: calc(1 - var(--plate));
+  transition: opacity 1.8s var(--ease-plate);
+  background:
+    radial-gradient(58% 44% at 50% 56%, rgba(var(--fg-rgb), 0.035), transparent 72%),
+    radial-gradient(90% 60% at 50% 108%, rgba(var(--accent-rgb), 0.035), transparent 62%);
+}
+/* The opening has to start on TRUE black, so the DOM haze waits for the same
+   beat as the glow in the scene rather than being up from the first frame. */
+body:not(.is-lit) .pool { opacity: 0; }
+
+.grain {
+  position: fixed;
+  inset: -120%;
+  z-index: 4;
+  pointer-events: none;
+  /* Paper wants more tooth than a black studio does. */
+  opacity: calc(0.11 + 0.09 * var(--plate));
+  mix-blend-mode: overlay;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  animation: grain 5.2s steps(5) infinite;
+}
+@keyframes grain {
+  0%,100% { transform: translate(0,0); }
+  20%     { transform: translate(-3%, 2%); }
+  40%     { transform: translate(2%, -3%); }
+  60%     { transform: translate(-2%, -2%); }
+  80%     { transform: translate(3%, 1%); }
+}
+
+/* ---------------- persistent chrome ---------------- */
+
+/* The chrome and the progress bar wait for the object. During the opening the
+   only things on screen should be the name and then the lens; a masthead and a
+   scrubber sitting there from frame one gives the whole thing away. */
+.chrome, .rail {
+  opacity: 0;
+  transition: opacity 1.4s var(--ease-reveal);
+}
+body.is-arrived .chrome,
+body.is-arrived .rail { opacity: 1; }
+
+.chrome {
+  font-variation-settings: var(--tech);
+  position: fixed;
+  inset: 0;
+  z-index: 6;
+  pointer-events: none;
+  font-family: var(--sans);
+  font-size: var(--t-label);
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.chrome > div { position: absolute; display: flex; gap: 0.6rem; align-items: baseline; }
+.chrome-tl { top: var(--gutter); left: var(--gutter); }
+.chrome-tr { top: var(--gutter); right: var(--gutter); }
+/* Top centre, under the progress bar. The bottom-left corner now belongs to
+   the hero's specification strip, and a chapter name sitting on top of the
+   first figure is worse than no chapter name at all. */
+.chrome-tc {
+  top: var(--gutter);
+  transition: opacity 0.5s var(--ease-reveal);
+  left: 50%;
+  transform: translateX(-50%);
+  color: var(--faint);
+}
+
+/* The hero's mark is not a chapter number — it is what the product IS — so it
+   is the one coloured thing in the chrome and sits a size above the rest.
+   Every other chapter keeps the plain 10px label.
+
+   The left padding is not decoration: letter-spacing adds its gap AFTER every
+   character including the last, so a centred, widely-tracked line sits half a
+   tracking-unit left of true centre. Matching that space on the front puts it
+   back. */
+[data-rail-now].is-lead {
+  color: var(--accent);
+  font-size: clamp(0.8rem, calc(0.8rem + 7 * var(--slope)), 1.15rem);
+  font-variation-settings: 'wdth' 88, 'wght' 560;
+  letter-spacing: 0.3em;
+  padding-left: 0.3em;
+  transition: color 0.5s var(--ease-settle);
+}
+
+.mark { color: var(--fg); letter-spacing: 0.32em; font-weight: 500; }
+.mark-sub { color: var(--faint); letter-spacing: 0.16em; }
+
+/* ---------------- progress ----------------
+   A bar across the very top edge, ticked once per chapter, with the fill
+   growing left to right. It sits above the corner marks so it reads as part
+   of the browser chrome rather than as another element competing inside the
+   composition. */
+
+.rail {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  z-index: 7;
+  pointer-events: none;
+}
+.rail-track { position: absolute; inset: 0; background: var(--rule); }
+
+/* scaleX on a transform-origin: left, so the fill is a compositor job rather
+   than a layout one and never costs a reflow while scrolling. */
+.rail-index {
+  position: absolute;
+  inset: 0;
+  background: var(--accent);
+  transform-origin: left center;
+  transform: scaleX(0);
+  box-shadow: 0 0 12px rgba(var(--accent-rgb), 0.5);
+}
+
+.rail-ticks { list-style: none; margin: 0; padding: 0; position: absolute; inset: 0; }
+.rail-ticks li {
+  position: absolute;
+  top: 0;
+  width: 1px;
+  height: 7px;
+  background: var(--rule);
+  transition: height 0.45s var(--ease-settle), background-color 0.45s var(--ease-settle);
+}
+.rail-ticks li.is-on { height: 12px; background: var(--accent); }
+
+/* ---------------- chapters ---------------- */
+
+/* The copy layer must not swallow pointer events, or the object underneath
+   cannot be grabbed anywhere the chapters cover. Interactive children opt back
+   in individually. */
+main { position: relative; z-index: 5; pointer-events: none; }
+
+/* Block, not flex. A flex chapter centres its sticky pad inside the tall
+   section, which parks the pad hundreds of pixels down the viewport and stops
+   `position: sticky` from ever pinning it. All alignment belongs to the pad. */
+.chapter {
+  position: relative;
+  min-height: 100svh;
+  display: block;
+  pointer-events: none;
+}
+.chapter--hero    { min-height: 100svh; }
+.chapter--object  { min-height: 200svh; }
+.chapter--beat    { min-height: 150svh; }
+.chapter--explode { min-height: 320svh; }   /* the long scrub, and the reason
+                                                the explode has room to breathe */
+.chapter--trace   { min-height: 230svh; }
+.chapter--series  { min-height: 180svh; }
+.chapter--end     { min-height: 130svh; }
+
+.pad {
+  padding: 0 var(--gutter);
+  width: 100%;
+  position: sticky;
+  top: 0;
+  min-height: 100svh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+/* The hero uses the whole plate. Copy holds the upper left, the object owns
+   the centre, and the foot carries the ask and the numbers. Centring three
+   floating blocks in the middle of the frame is what left a dead third at the
+   bottom and made the composition read as unfinished. */
+.pad--hero {
+  justify-content: space-between;
+  padding-top: clamp(4.5rem, 10vh, 7rem);
+  padding-bottom: clamp(1.2rem, 2.6vh, 2rem);
+}
+
+.hero-body {
+  flex: 1 1 auto;
+  display: grid;
+  grid-template-columns: minmax(0, 1.3fr) minmax(3rem, 0.62fr) minmax(0, 0.92fr);
+  /* `align-content: center` keeps the auto row at its CONTENT height instead of
+     letting grid stretch it to fill the pad — without it the row was 620px and
+     the feed ran to fifteen lines. `align-items: stretch` then makes the right
+     column exactly as tall as the left, so the two read as a matched pair. */
+  align-content: center;
+  align-items: stretch;
+  gap: clamp(1.5rem, 3vw, 3rem);
+  width: 100%;
+}
+
+/* Both blocks arrive in place. The movement in this sequence belongs to the
+   headline being lifted by the copy that opens beneath it; two blocks sliding
+   in from the sides on top of that is one motion too many. */
+.hero-copy {
+  opacity: 0;
+  transition: opacity 1.15s var(--ease-reveal);
+}
+.hero-copy--left  { grid-column: 1; max-width: min(62ch, 100%); }
+.hero-copy--right {
+  grid-column: 3;
+  max-width: min(38ch, 100%);
+  justify-self: end;
+  display: flex;
+  flex-direction: column;
+  min-height: clamp(9rem, 22vh, 14rem);
+}
+body.is-lit .hero-copy { opacity: 1; }
+body.is-lit .hero-copy--right { transition-delay: 0.06s; }
+
+/* The hero lede fades in place. It used to open from zero height and shove the
+   headline upward, which meant the one fixed thing in the frame moved every
+   time the copy arrived. */
+.hero-copy--left .lede {
+  opacity: 0;
+  transform: translateY(0.8rem);
+  transition: opacity 0.9s var(--ease-reveal), transform 0.9s var(--ease-reveal);
+}
+body.is-detailed .hero-copy--left .lede { opacity: 1; transform: none; }
+
+.hero-copy--right .tag { margin-bottom: 0.9rem; }
+.hero-copy--right .lede { margin-top: 0; }
+
+/* Sized to its column: at the full display scale the headline overflows, and
+   because `.line` masks with overflow:hidden that overflow is clipped rather
+   than wrapped. */
+.hero-copy .display--xl {
+  font-size: clamp(2.4rem, calc(2.4rem + 88 * var(--slope)), 8.4rem);
+  line-height: 0.98;
+  letter-spacing: -0.075em;   /* mono sets loose; display needs it pulled hard */
+}
+.hero-copy .lede {
+  /* In a monospace the measure is literally a character count, so dropping the
+     size alone would keep all four lines and just narrow the block. The size
+     comes down AND the measure opens to 44ch, which is what puts it on three. */
+  max-width: 44ch;
+  font-size: clamp(0.76rem, calc(0.76rem + 2.6 * var(--slope)), 0.92rem);
+  line-height: 1.75;          /* fixed pitch reads slower; give it air */
+  letter-spacing: -0.02em;
+  color: rgba(var(--fg-rgb), calc(0.66 + 0.08 * var(--plate)));
+}
+
+/* Selling points. Short enough to scan, hairline-separated so they read as a
+   list of claims rather than as a paragraph broken up. */
+/* Rolodex: hinged at the top edge, each card falls forward into place. The
+   text is on an inner span so the hairline rule stays put while the card
+   turns, which is what keeps it reading as a card rather than a whole row
+   flipping. */
+
+/* ---- the rendering feed ----
+   Masked to nothing at both ends, so lines arrive and leave instead of
+   appearing and being cut off by a hard edge. The list is duplicated in JS and
+   the track travels exactly -50%, which is what makes the loop seamless. */
+.ticker {
+  /* Basis 0, not auto. On `auto` the flex base size is the CONTENT height —
+     `overflow: hidden` does not stop that — so the 36-line track drove the row
+     to 1487px and the hero stopped fitting the fold. At basis 0 it takes only
+     the leftover height the left column leaves behind, and the floor lives on
+     the column instead so it can never collapse to nothing. */
+  flex: 1 1 0;
+  min-height: 0;
+  overflow: hidden;
+  -webkit-mask-image: linear-gradient(to bottom, transparent 0%, #000 22%, #000 78%, transparent 100%);
+  mask-image: linear-gradient(to bottom, transparent 0%, #000 22%, #000 78%, transparent 100%);
+}
+.ticker-track {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  animation: ticker 37s linear infinite;
+  will-change: transform;
+}
+.ticker:hover .ticker-track { animation-play-state: paused; }
+.ticker-track li {
+  font-variation-settings: var(--tech);
+  position: relative;
+  padding: 0.62rem 0 0.62rem 1.4rem;
+  font-size: var(--t-body);
+  line-height: 1.45;
+  color: var(--muted);
+  /* One line each, always. A wrapped entry breaks the rhythm of the feed and
+     reads as a layout fault rather than as a list; the copy is written short
+     enough to fit, and this makes that structural rather than hopeful. */
+  white-space: nowrap;
+}
+/* The same drawn dash the four claims carried before they moved in here. */
+.ticker-track li::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 1.35em;
+  width: 6px;
+  height: 1px;
+  background: rgba(var(--fg-rgb), 0.45);
+}
+@keyframes ticker { to { transform: translateY(-50%); } }
+
+.hero-foot { width: 100%; flex: 0 0 auto; }
+
+/* Centred on the plate, not on whatever happens to be beside them. */
+/* The rule the metrics hang from. It is its own element rather than a border
+   so it can be drawn: scaleX from the centre, which needs a transform and a
+   transform-origin that a border cannot give you. */
+.hero-rule {
+  display: block;
+  width: 100%;
+  height: 1px;
+  background: var(--rule);
+  transform: scaleX(0);
+  transform-origin: center;
+}
+
+/* The buttons slide DOWN out from behind the lens instead of fading up.
+ *
+ * "Behind the lens" cannot be z-order: the DOM sits above the canvas, and the
+ * canvas background is opaque, so anything placed under it disappears entirely
+ * rather than being occluded by the object. It has to be a clip edge instead.
+ *
+ * This wrapper is pulled upward by a negative margin and pushed back down by
+ * an equal padding, so it occupies exactly the space it did before while its
+ * clip region reaches up to the lens's lowest point — measured at 60px above
+ * the buttons, hence the 6.4vh. The buttons start above that edge, fully
+ * hidden, and travel down into place. */
+.hero-actions-clip {
+  --reach: clamp(2.2rem, 6.4vh, 4.6rem);
+  --drop:  clamp(1.8rem, 4.7vh, 3rem);   /* 23px below vs 60px above was lopsided */
+  width: max-content;
+  max-width: 100%;
+  margin: calc(var(--reach) * -1) auto calc(var(--drop) - 0.4rem);
+  padding: var(--reach) 0.5rem 0.4rem;   /* bottom/side room so a focus ring is not shaved */
+  overflow: hidden;
+  /* A plain clip gives a hard horizontal line for the button to pop through.
+     Fading the mask across the travel makes it arrive out of nothing instead:
+     opaque by 15% short of its resting position, so it settles solid. */
+  -webkit-mask-image: linear-gradient(to bottom, transparent 0, #000 calc(var(--reach) * 0.85));
+  mask-image: linear-gradient(to bottom, transparent 0, #000 calc(var(--reach) * 0.85));
+  pointer-events: none;                  /* the wrapper overlaps the object */
+}
+
+/* Two equal columns inside a grid sized to its own content: `1fr` resolves to
+   the widest item's max-content, so both buttons take the width of the longer
+   label without either being stretched across the plate. */
+.hero-actions {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  align-items: center;
+  gap: clamp(0.8rem, 2vw, 1.4rem);
+  width: max-content;
+  max-width: 100%;
+  margin: 0 auto;
+}
+.hero-actions .cta { justify-content: center; }
+@media (max-width: 560px) {
+  .hero-actions-clip { width: 100%; }
+  .hero-actions { grid-template-columns: 1fr; width: 100%; }
+}
+/* Solid foreground fill with the ground colour knocked out of it. On a page
+   with no accent hue this is the loudest thing available, and it keeps the
+   primary and secondary actions unmistakably ranked. */
+.cta.cta--fill { color: var(--bg); border-color: var(--fg); font-weight: 500; }
+.cta.cta--fill::before { transform: translateY(0); background: var(--fg); }
+.cta.cta--fill:hover { color: var(--fg); }
+.cta.cta--fill:hover::before { transform: translateY(-101%); }
+.cta.cta--ghost { color: var(--muted); border-color: rgba(var(--fg-rgb), 0.28); }
+.cta.cta--ghost:hover { color: var(--bg); border-color: var(--fg); }
+
+/* The specification as a full-width strip along the foot of the plate. Five
+   even columns divided by hairlines, which fills the band that was empty and
+   gives the numbers the weight of a datasheet rather than a caption. */
+.hero-metrics {
+  margin: 0;
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  width: 100%;
+}
+.hero-metrics > div {
+  padding: clamp(0.9rem, 2vh, 1.5rem) clamp(0.7rem, 1.6vw, 1.6rem);
+  border-left: 1px solid var(--rule);
+  min-width: 0;
+}
+.hero-metrics > div:first-child { border-left: none; padding-left: 0; }
+.hero-metrics dd {
+  margin: 0;
+  font-variation-settings: 'wdth' 100, 'wght' 620;
+  font-variant-numeric: tabular-nums;
+  font-size: clamp(1rem, calc(1rem + 11 * var(--slope)), 1.7rem);
+  line-height: 1.1;
+  letter-spacing: -0.05em;
+  color: var(--fg);
+  white-space: nowrap;
+}
+.hero-metrics dt {
+  font-variation-settings: var(--tech);
+  font-size: var(--t-micro);
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--faint);
+  margin-top: 0.35rem;
+}
+.pad--left   { align-items: flex-start; }
+.pad--right  { align-items: flex-end;   text-align: right; }
+/* The blank beat: object high, the line arriving late and low. Centring the
+   copy vertically put it straight through the object in landscape. */
+.pad--centre {
+  align-items: center;
+  text-align: center;
+  justify-content: flex-end;
+  padding-bottom: clamp(4rem, 13vh, 9rem);
+}
+
+/* The closing frame looks straight down the barrel, so the object owns the
+   lower two thirds and the copy sits above it in clear space. */
+/* Two columns flanking the object, which now stands dead centre so the glow
+   behind it has something to sit behind. */
+/* Top-anchored with the social pinned to the foot by an auto margin, so the
+   band between them belongs to the object. Centring the stack instead let the
+   object drift up over the chapter mark in the top bar. */
+.pad--end {
+  align-items: stretch;
+  justify-content: flex-start;
+  padding-top: clamp(5.5rem, 13.5vh, 8.5rem);
+  padding-bottom: clamp(2.2rem, 5.5vh, 3.6rem);
+}
+/* The row reserves the band the object stands in, so the block below it lands
+   under the barrel instead of across it. Without this the DOM stack centres as
+   a whole and the social sat mid-lens — the object is drawn by the camera and
+   has no say in the layout, so the layout has to leave room for it. */
+.end-body {
+  min-height: clamp(22rem, 63vh, 40rem);
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(6rem, 0.82fr) minmax(0, 1fr);
+  align-content: center;
+  align-items: center;
+  gap: clamp(1.2rem, 2.6vw, 2.6rem);
+  width: 100%;
+}
+.end-copy--left  { grid-column: 1; max-width: min(26rem, 30vw); }
+/* Smaller than the beat's display for the same reason chapter 04's head is:
+   it now sits BESIDE the object rather than owning the frame. At the shared
+   88px "Available" measures 527px against a 416px column, and `.line` clips
+   rather than wraps — so it silently read "Availab". */
+.pad--end .display--l {
+  font-size: clamp(1.6rem, calc(1.6rem + 44 * var(--slope)), 4.1rem);
+}
+/* An explicit width, not just a max-width: `justify-self: end` sizes a grid
+   item to its CONTENT, so the column collapsed to 208px and left a 293px gulf
+   beside the object against 84px on the other side. */
+.end-copy--right {
+  grid-column: 3;
+  width: min(26rem, 30vw);
+  justify-self: end;
+}
+
+.end-copy--right .tag { margin: 0 0 clamp(0.7rem, 1.6vh, 1.1rem); }
+
+/* The number is the thing being asked for, so it is set like a headline
+   rather than like a spec row. */
+.end-price {
+  margin: 0 0 clamp(0.9rem, 2vh, 1.4rem);
+  font-variation-settings: 'wdth' 100, 'wght' 640;
+  font-size: clamp(1.7rem, calc(1.7rem + 20 * var(--slope)), 3rem);
+  letter-spacing: -0.06em;
+  line-height: 1;
+  color: var(--fg);
+}
+.end-price span {
+  display: block;
+  font-variation-settings: var(--tech);
+  font-size: var(--t-micro);
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--faint);
+  margin-bottom: 0.45rem;
+}
+.specs.end-specs { margin: 0; max-width: none; }
+
+/* Two equal buttons filling the column, same construction as the hero pair. */
+.end-actions {
+  margin: clamp(1.3rem, 3vh, 2.1rem) 0 0;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: clamp(0.5rem, 1.2vw, 0.8rem);
+  width: 100%;
+}
+.end-actions .cta { justify-content: center; padding-inline: 0.9rem; }
+
+/* Under the object: the middle column, pinned to the foot of the row so it
+   sits below the standing lens rather than across it. */
+.end-social {
+  margin: auto auto 0;          /* auto top margin pins it to the foot */
+  text-align: center;
+}
+.social {
+  list-style: none;
+  margin: 0 0 clamp(0.8rem, 1.8vh, 1.2rem);
+  padding: 0;
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: clamp(0.7rem, 1.8vw, 1.4rem);
+}
+.social a {
+  font-variation-settings: var(--tech);
+  font-size: var(--t-micro);
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: rgba(var(--fg-rgb), 0.62);
+  text-decoration: none;
+  pointer-events: auto;
+  transition: color 0.4s var(--ease-settle);
+}
+.social a:hover { color: var(--accent); }
+.end-social .end-mail { display: inline-block; }
+.end-mail {
+  font-variation-settings: var(--tech);
+  font-size: var(--t-micro);
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--faint);
+  text-decoration: none;
+  pointer-events: auto;
+  transition: color 0.4s var(--ease-settle);
+}
+.end-mail:hover { color: var(--accent); }
+.body.body--end { margin: clamp(1.2rem, 2.6vh, 1.8rem) 0 0; max-width: none; }
+
+/* The trace chapter is laid out like a figure in an optics text: caption
+   across the top, diagram beneath it with the full width to converge in. */
+/* A narrow left column, vertically centred, with the figure centred beside it.
+   It used to be a wide block pinned to the top with the copy in two columns and
+   the specs in a row of three, which pushed the trace down into the bottom of
+   the frame and left a band of nothing between them. One column reads faster
+   and gives the figure the whole right half. */
+.pad--figure {
+  justify-content: center;
+  align-items: flex-start;
+  padding-top: 0;
+}
+/* `.pad--figure > *` is only (0,1,0) — the universal selector contributes
+   nothing — so it TIES with `.specs` and loses on source order. The children
+   are named explicitly to outrank it. Same trap as `.cta--fill` earlier. */
+/* Same size as every other chapter head. It was scoped smaller for a while,
+   because at the shared size the line runs to ~551px and the figure started at
+   603px — so the column could not clear it. The right answer was to buy the
+   room from the figure (a longer camera pad and a bigger shift) rather than to
+   shrink the type: an inconsistent heading scale is more noticeable across
+   chapters than a slightly smaller diagram is within one. */
+.pad--figure > .title { max-width: min(38rem, 46vw); }
+/* Same measure as chapter 01's copy, so the two read as one column width
+   across the page rather than as two different layouts. */
+.pad--figure > .body,
+.pad--figure > .specs { max-width: var(--col); }
+.pad--figure .body { columns: 1; }
+.pad--figure .specs { margin-top: clamp(1.5rem, 3.4vh, 2.4rem); }
+
+/* Stacked, not a row: Focal plane and Elements sit under Centre spot. */
+.specs.specs--stack { grid-template-columns: minmax(0, 1fr); }
+
+.pad--left  > *,
+.pad--right > * { max-width: var(--col); }
+
+/* Copy racks out of focus across a plate turn.
+   The alternative is worse: interpolating an inverted palette makes the
+   foreground and background meet at the same luminance halfway through, and
+   the copy disappears for a beat. Applied to the pad's children rather than
+   the pad itself, because a filter on a sticky element is fragile and because
+   blurring seven full-viewport blocks is far more work than blurring the text
+   inside them. */
+.pad > *,
+.chrome > div {
+  filter: blur(calc(var(--turn) * 5px));
+  opacity: calc(1 - 0.72 * var(--turn));
+  will-change: filter, opacity;
+}
+
+/* ---------------- type ----------------
+   One family throughout. Display is the same Archivo pushed out on its width
+   axis, which gives the page its typographic tension without ever introducing
+   a second voice. */
+
+.display {
+  font-family: var(--sans);
+  font-variation-settings: var(--wide);
+  line-height: 0.88;
+  letter-spacing: -0.035em;
+  margin: 0;
+}
+.display--xl { font-size: var(--t-display); }
+.display--l  { font-size: clamp(2.3rem, calc(2.3rem + 56 * var(--slope)), 5.5rem); }
+
+.title {
+  font-family: var(--sans);
+  font-variation-settings: var(--semi);
+  font-size: var(--t-title);
+  line-height: 1.12;
+  letter-spacing: -0.055em;
+  margin: 0;
+}
+.title--set { margin-bottom: clamp(1rem, 2vw, 1.6rem); }
+/* Compounded. `.body` sets the shorthand `margin: 1.4rem 0 0`, which zeroes
+   the bottom — and at equal specificity the later rule wins, so a bare
+   `.body--set` silently had no bottom margin at all. Fourth time this trap has
+   turned up in this file. */
+.body.body--set { margin-top: 0; margin-bottom: clamp(2.6rem, 5.2vw, 4rem); }
+
+/* Every headline line is a mask; JS drops an <i> inside to slide up through it.
+   The display sizes run a line-height under 1, so the em box is shorter than
+   the glyphs and a descender (the p in "open.") gets guillotined by the very
+   overflow that makes the reveal work. The mask is grown 0.22em past the line
+   box — Martian Mono's descender measures 0.2em — and the same amount is taken
+   straight back in negative margin, so the clip clears the tail while the
+   vertical rhythm is untouched. */
+.line {
+  display: block;
+  overflow: hidden;
+  padding-bottom: 0.22em;
+  margin-bottom: -0.22em;
+}
+.line > i {
+  display: block;
+  font-style: inherit;
+  transform: translateY(var(--mask-hide));
+  transition: transform 1.05s var(--ease-reveal);
+}
+.is-in .line > i { transform: translateY(0); }
+.is-in .line:nth-child(2) > i { transition-delay: 0.10s; }
+.is-in .line:nth-child(3) > i { transition-delay: 0.20s; }
+.is-in .line:nth-child(4) > i { transition-delay: 0.30s; }
+
+/* The beat's lines are positioned from scroll, not from a transition, so the
+   swap can be scrubbed backwards. `:nth-child` outweighs `.is-in .line > i`
+   above, so these win regardless of order. The second line runs its window
+   slightly later, which is the stagger transition-delay gives everywhere
+   else. */
+.beat-card .line:nth-child(1) > i { transform: translateY(var(--ty1, 128%)); transition: none; }
+.beat-card .line:nth-child(2) > i { transform: translateY(var(--ty2, 128%)); transition: none; }
+
+/* Emphasis is a value move first: the setup line sits back at fractional alpha
+   and the line carrying the claim comes forward. `.accent` then adds hue on top
+   of that, which is why it is rationed to ONE line per chapter. The hero
+   headline deliberately carries no `.accent` at all — it is the sell line and
+   wants maximum contrast, and the hero gets its colour from the glow behind the
+   lens instead. */
+.display .line,
+.title .line { color: rgba(var(--fg-rgb), calc(0.52 + 0.10 * var(--plate))); }
+.display .line.accent,
+.title .line.accent,
+.accent { color: var(--accent); }
+
+/* The hero headline is the exception to the dimmed-setup-line rule above: both
+   its lines carry the claim, so both sit at full foreground. */
+.hero-copy--left h1 .line { color: var(--fg); }
+
+.eyebrow, .tag {
+  font-variation-settings: var(--tech);
+  font-family: var(--sans);
+  font-size: var(--t-label);
+  letter-spacing: 0.26em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin: 0 0 clamp(1.1rem, 2.4vw, 2rem);
+}
+.tag { color: var(--fg); }
+
+.lede {
+  font-family: var(--sans);
+  font-size: var(--t-body);
+  font-weight: 300;
+  line-height: 1.68;
+  color: var(--muted);
+  max-width: 42ch;
+  margin: clamp(1.6rem, 3vw, 2.6rem) 0 0;
+}
+.body {
+  font-family: var(--sans);
+  font-weight: 300;
+  font-size: var(--t-body);
+  line-height: 1.72;
+  color: var(--muted);
+  margin: 1.4rem 0 0;
+}
+
+.cue {
+  font-family: var(--sans);
+  font-size: var(--t-micro);
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  color: var(--faint);
+  margin: clamp(2.4rem, 5vw, 4rem) 0 0;
+  display: flex;
+  align-items: center;
+  gap: 0.9rem;
+}
+/* The rule draws itself in rather than appearing. */
+.cue-rule {
+  display: block;
+  width: clamp(40px, 6vw, 80px);
+  height: 1px;
+  background: var(--accent);
+  transform: scaleX(0);
+  transform-origin: left center;
+  transition: transform 1.4s var(--ease-reveal) 0.5s;
+}
+.is-in .cue-rule { transform: scaleX(1); }
+
+/* ---------------- hero density ----------------
+   The three or four numbers a buyer checks first, sitting under the headline
+   as chips rather than as a table, plus something to press. A product hero
+   with nothing to do in it reads as a placeholder. */
+
+.cta {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.9rem;
+  padding: 0.95rem 1.7rem;
+  border: 1px solid rgba(var(--accent-rgb), 0.55);
+  border-radius: 999px;
+  color: var(--accent);
+  text-decoration: none;
+  font-size: var(--t-label);
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  pointer-events: auto;
+  overflow: hidden;
+  isolation: isolate;
+  transition: color 0.45s var(--ease-settle), border-color 0.45s var(--ease-settle),
+              transform 0.5s var(--ease-settle);
+}
+/* The fill wipes up from the floor of the button rather than fading in. */
+.cta::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: var(--accent);
+  transform: translateY(101%);
+  transition: transform 0.55s var(--ease-plate);
+}
+.cta:hover { color: var(--bg); border-color: var(--accent); }
+.cta:hover::before { transform: translateY(0); }
+
+.hint {
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  font-size: var(--t-micro);
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--faint);
+}
+.hint-dot {
+  width: 5px; height: 5px; border-radius: 50%;
+  background: var(--accent);
+  animation: pulse 2.6s var(--ease-plate) infinite;
+}
+@keyframes pulse {
+  0%, 100% { opacity: 0.25; transform: scale(1); }
+  50%      { opacity: 1;    transform: scale(1.5); }
+}
+
+/* ---------------- spec table ---------------- */
+
+/* Ten rows in a single column runs past the fold on a laptop, so the table
+   pairs up once there is width for it. */
+.specs {
+  margin: clamp(1.6rem, 3vw, 2.6rem) 0 0;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  column-gap: clamp(1.5rem, 3vw, 2.8rem);
+  width: 100%;
+  max-width: min(52rem, 92vw);
+}
+.specs--tight { grid-template-columns: minmax(0, 1fr); max-width: var(--col); }
+/* Three figures in a row, sitting under the caption as a legend. */
+.specs--row { grid-template-columns: repeat(3, minmax(0, 1fr)); max-width: min(58rem, 92vw); }
+.specs--row > div { flex-direction: column; align-items: flex-start; gap: 0.3rem; }
+.specs--row dd { text-align: left; }
+
+.specs > div {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 1.2rem;
+  padding: 0.54rem 0;
+  border-top: 1px solid var(--rule);
+  min-width: 0;
+  transition: border-color 0.24s var(--ease-settle);
+}
+.specs > div:nth-last-child(-n+2) { border-bottom: 1px solid var(--rule); }
+.specs--tight > div:last-child { border-bottom: 1px solid var(--rule); }
+.specs dt {
+  font-variation-settings: var(--tech);
+  font-family: var(--sans);
+  font-size: var(--t-micro);
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--faint);
+}
+.specs dd {
+  margin: 0;
+  font-family: var(--sans);
+  font-size: var(--t-label);
+  font-weight: 400;
+  color: var(--fg);
+  font-variant-numeric: tabular-nums;
+  font-weight: 500;
+  text-align: right;
+}
+.pad--right .specs > div { flex-direction: row-reverse; }
+.pad--right .specs dd { text-align: left; }
+
+/* `.pad--left > *` and `.specs` have equal specificity, so the table's own
+   max-width was winning on source order and running the second column out
+   under the object. Stated explicitly, and narrower than the body column is
+   wide, because a table wants more width than prose does. */
+.pad--left .specs,
+.pad--right .specs { max-width: min(40rem, 100%); }
+
+/* ---------------- the explode chapter ---------------- */
+
+.pad--inside {
+  align-items: flex-start;
+  justify-content: flex-start;
+  padding-top: clamp(5.5rem, 14vh, 9rem);
+}
+
+/* ---------------- the two-card beat ----------------
+   Both cards occupy the same grid cell, so they sit in exactly the same place
+   and the stack takes the height of the taller. The swap is driven from scroll
+   rather than from a transition, because a transition cannot be scrubbed
+   backwards and this page's whole contract is that scrolling up undoes
+   whatever scrolling down did. */
+.beat-stack { display: grid; width: 100%; }
+.beat-stack > * { grid-area: 1 / 1; margin: 0; }
+.beat-card > h2 { margin: 0; }
+
+/* The supporting line under each card. Driven by --sub from scroll, for the
+   same reason the headline masks are: it has to scrub backwards. */
+.beat-sub {
+  margin: clamp(0.9rem, 2.2vh, 1.6rem) auto 0;
+  max-width: 46ch;
+  font-size: clamp(0.76rem, calc(0.76rem + 2.6 * var(--slope)), 0.92rem);
+  line-height: 1.75;
+  letter-spacing: -0.02em;
+  color: rgba(var(--fg-rgb), calc(0.6 + 0.08 * var(--plate)));
+  opacity: var(--sub, 0);
+  transform: translateY(calc((1 - var(--sub, 0)) * 0.9rem));
+}
+
+/* Wide screens label the glass in place; narrow screens get a legend instead. */
+.legend { display: none; }
+
+.callouts {
+  position: fixed;
+  inset: 0;
+  z-index: 5;
+  pointer-events: none;
+}
+.callout {
+  font-variation-settings: var(--tech);
+  position: absolute;
+  font-family: var(--sans);
+  font-size: var(--t-micro);
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+  color: var(--muted);
+  white-space: nowrap;
+  transform: translate(-50%, -50%);
+  opacity: 0;
+  transition: opacity 0.5s var(--ease-reveal);
+}
+.callout b {
+  display: block;
+  color: var(--accent);
+  font-weight: 500;
+  letter-spacing: 0.2em;
+}
+.callout span { color: var(--faint); }
+
+/* ---------------- the element inspector ----------------
+   Appears only when the stack is fully open, and only for the group under the
+   pointer. It is a card rather than a longer callout because the callouts are
+   already carrying the identification; this carries the argument for why that
+   piece of glass is in there at all. */
+.probe {
+  position: fixed;
+  z-index: 8;
+  pointer-events: none;
+  width: 17.5rem;
+  max-width: 44vw;
+  padding: 0.85rem 1rem 0.95rem;
+  border: 1px solid rgba(var(--accent-rgb), 0.30);
+  border-radius: 2px;
+  background: rgba(var(--bg-rgb), 0.86);
+  backdrop-filter: blur(14px) saturate(1.1);
+  -webkit-backdrop-filter: blur(14px) saturate(1.1);
+  opacity: 0;
+  transform: translate(-50%, 0) translateY(0.5rem);
+  transition: opacity 0.28s var(--ease-settle), transform 0.28s var(--ease-settle);
+}
+.probe.is-on { opacity: 1; transform: translate(-50%, 0) translateY(0); }
+
+.probe-head {
+  display: flex;
+  align-items: baseline;
+  gap: 0.6rem;
+  margin: 0 0 0.15rem;
+}
+.probe-id {
+  font-variation-settings: var(--tech);
+  font-size: var(--t-micro);
+  letter-spacing: 0.2em;
+  color: var(--accent);
+}
+.probe-role {
+  font-variation-settings: var(--tech);
+  font-size: var(--t-micro);
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--faint);
+  margin-left: auto;
+}
+.probe-name {
+  margin: 0 0 0.6rem;
+  font-variation-settings: 'wdth' 92, 'wght' 620;
+  font-size: clamp(0.85rem, calc(0.85rem + 3 * var(--slope)), 1.05rem);
+  letter-spacing: -0.045em;
+  line-height: 1.15;
+  color: var(--fg);
+}
+.probe dl { margin: 0; display: grid; grid-template-columns: auto 1fr; gap: 0.28rem 0.9rem; }
+.probe dt {
+  font-variation-settings: var(--tech);
+  font-size: var(--t-micro);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--faint);
+}
+.probe dd {
+  margin: 0;
+  text-align: right;
+  font-size: var(--t-micro);
+  letter-spacing: 0.02em;
+  color: rgba(var(--fg-rgb), 0.86);
+  font-variation-settings: 'wdth' 92, 'wght' 500;
+}
+.probe-note {
+  margin: 0.65rem 0 0;
+  padding-top: 0.6rem;
+  border-top: 1px solid rgba(var(--fg-rgb), 0.12);
+  font-size: var(--t-micro);
+  line-height: 1.6;
+  letter-spacing: 0.01em;
+  text-transform: none;
+  color: rgba(var(--fg-rgb), 0.62);
+  font-variation-settings: 'wdth' 90, 'wght' 400;
+}
+@media (max-width: 860px) { .probe { display: none; } }
+/* A leader line pointing back at the glass the label names. */
+.callout::before {
+  content: '';
+  position: absolute;
+  left: 50%;
+  width: 1px;
+  height: 0.85rem;
+  background: rgba(var(--accent-rgb), 0.4);
+}
+.callout--up::before   { bottom: -1.05rem; }
+.callout--down::before { top: -1.05rem; }
+.callout--down { text-align: center; }
+
+/* ---------------- the series index ---------------- */
+
+/* The copy holds the left half and the object takes the right. The index used
+   to run to 74rem, so its rules crossed the whole plate and the lens had to be
+   shrunk into the bottom corner to stay clear of them. */
+.pad--series { justify-content: center; align-items: flex-start; }
+.pad--series > * { max-width: min(40rem, 54vw); }
+/* The chapter mark sits at the top gutter; without this the headline ran into
+   it. Reserving the gutter plus a line keeps the two apart at any height. */
+.pad--series { padding-top: calc(var(--gutter) + 2.5rem); }
+.pad--series > .setcard { max-width: none; }
+.index li { pointer-events: auto; }
+.index li.is-probed .idx { color: var(--accent); }
+
+/* ---------------- the focal-length panel ----------------
+   A large frame over the object: it starts at roughly the lens's own left edge
+   and runs to the right gutter, and its height covers the lens. `object-fit:
+   cover` means any supplied photograph near 3:2 fills it without distorting. */
+.setcard {
+  position: absolute;
+  right: var(--gutter);
+  top: 50%;
+  width: min(44rem, 47vw);
+  margin: 0;
+  overflow: hidden;
+  border: 1px solid rgba(var(--fg-rgb), 0.14);
+  /* Opaque enough that the placeholder diagram reads against it. A supplied
+     photograph covers this entirely, so it only matters until one exists. */
+  background: rgba(var(--bg-rgb), 0.93);
+  backdrop-filter: blur(14px) saturate(1.05);
+  -webkit-backdrop-filter: blur(14px) saturate(1.05);
+  opacity: 0;
+  transform: translateY(-50%) translateY(0.8rem);
+  transition: opacity 0.34s var(--ease-settle), transform 0.34s var(--ease-settle);
+  pointer-events: none;
+  /* The three frames stack in one cell so the card takes the height of the
+     tallest and only opacity changes between them. */
+  display: grid;
+}
+.setcard.is-on { opacity: 1; transform: translateY(-50%); }
+.setshot {
+  grid-area: 1 / 1;
+  margin: 0;
+  opacity: 0;
+  transition: opacity 0.28s var(--ease-settle);
+}
+.setshot.is-active { opacity: 1; }
+
+/* The photograph keeps its whole 3:2 frame and the caption band sits BELOW it,
+   rather than over it. A band laid on top has to hide part of the picture, and
+   at 25mm that part is the subject's legs. */
+.setshot-frame { position: relative; aspect-ratio: 3 / 2; overflow: hidden; }
+.setshot-ph { position: absolute; inset: 0; width: 100%; height: 100%; }
+.setshot-ph .fig {
+  fill: none; stroke: rgba(var(--fg-rgb), 0.22); stroke-width: 3; stroke-linecap: round;
+}
+.setshot-ph .fig circle { fill: rgba(var(--fg-rgb), 0.22); stroke: none; }
+.setshot-ph .frm { fill: rgba(var(--accent-rgb), 0.10); stroke: var(--accent); stroke-width: 1.5; }
+.setshot-ph .ph {
+  fill: rgba(var(--fg-rgb), 0.34); font-family: var(--sans); font-size: 7px;
+  letter-spacing: 1.4px; text-anchor: middle;
+}
+.setshot-img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+
+/* A solid band, not a scrim. Fading the plate up over the photograph left the
+   subject showing through the type, which reads as a mistake rather than as a
+   caption. Opaque, its own strip, hard edge.
+
+   It also lost the spec table on the way: that was sized for a period when a
+   diagram sat behind it and there was nothing to cover, and the index row
+   beside it already prints all of those numbers. */
+.setshot-cap {
+  /* Fixed height, because the notes are not all the same length: without it
+     the 75mm card is 15px shorter than the other two and the whole panel
+     twitches as you move down the list. */
+  min-height: clamp(5.6rem, 13.3vh, 7.4rem);
+  padding: clamp(0.85rem, 2.2vh, 1.3rem) clamp(1rem, 2vw, 1.5rem) clamp(0.9rem, 2vh, 1.2rem);
+  background: var(--bg);
+  border-top: 1px solid rgba(var(--fg-rgb), 0.12);
+}
+.setshot-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 0.45rem;
+}
+.setshot-num {
+  margin: 0;
+  font-variation-settings: var(--tech);
+  font-size: var(--t-micro);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: rgba(var(--fg-rgb), 0.72);
+  white-space: nowrap;
+}
+.setshot-mm {
+  margin: 0;
+  font-variation-settings: 'wdth' 100, 'wght' 640;
+  font-size: clamp(1.4rem, calc(1.4rem + 12 * var(--slope)), 2.1rem);
+  letter-spacing: -0.06em; line-height: 1; color: var(--fg);
+}
+.setshot-mm span {
+  font-size: 0.36em; letter-spacing: 0.18em; margin-left: 0.5em;
+  color: var(--faint); text-transform: uppercase;
+}
+.setcard dl {
+  margin: 0; display: grid; grid-template-columns: auto 1fr;
+  gap: 0.24rem 0.9rem; max-width: 22rem;
+}
+.setcard dt {
+  font-variation-settings: var(--tech); font-size: var(--t-micro);
+  letter-spacing: 0.14em; text-transform: uppercase; color: var(--faint);
+}
+.setcard dd {
+  margin: 0; text-align: right; font-size: var(--t-micro);
+  color: rgba(var(--fg-rgb), 0.86);
+  font-variation-settings: 'wdth' 92, 'wght' 500;
+}
+.setshot-note {
+  margin: 0; padding-top: 0.5rem; max-width: 34rem;
+  border-top: 1px solid rgba(var(--fg-rgb), 0.14);
+  font-size: var(--t-micro); line-height: 1.65;
+  color: rgba(var(--fg-rgb), 0.64);
+  font-variation-settings: 'wdth' 90, 'wght' 400;
+  text-transform: none; letter-spacing: 0.01em;
+}
+.idx-aov {
+  display: block; margin-top: 0.28rem;
+  color: rgba(var(--fg-rgb), 0.42);
+}
+@media (max-width: 900px) { .setcard { display: none; } }
+.title--set { margin-bottom: clamp(1rem, 2vw, 1.6rem); }
+.index {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  width: 100%;
+}
+.index li {
+  display: flex;
+  /* Centred, not baseline-aligned. On a baseline the oversized numeral hangs
+     level with the "25mm" and the two meta lines below it pull all the weight
+     downward, so the row reads bottom-heavy. */
+  align-items: center;
+  gap: clamp(1rem, 3vw, 2.6rem);
+  padding: clamp(0.85rem, 1.9vw, 1.45rem) 0;
+  border-top: 1px solid var(--rule);
+  transition: border-color 0.3s var(--ease-settle);
+}
+.index li:last-child { border-bottom: 1px solid var(--rule); }
+
+/* One of the serif's four appearances: oversized numerals on paper. */
+.idx {
+  font-family: var(--sans);
+  font-variation-settings: var(--wide);
+  font-variant-numeric: tabular-nums;
+  font-size: clamp(2rem, calc(2rem + 38 * var(--slope)), 4.4rem);
+  line-height: 0.8;
+  color: var(--faint);
+  min-width: 2.2ch;
+  transition: color 0.3s var(--ease-settle);
+}
+/* The current row no longer takes the accent. Hovering is what the accent
+   marks now, and two accents competing made neither read as a state. */
+.is-current .idx { color: rgba(var(--fg-rgb), 0.5); }
+.idx-body h3 {
+  font-family: var(--sans);
+  font-variation-settings: var(--semi);
+  font-variant-numeric: tabular-nums;
+  font-size: var(--t-sub);
+  line-height: 1;
+  margin: 0 0 0.5rem;
+  letter-spacing: -0.015em;
+}
+.idx-meta {
+  font-variation-settings: var(--tech);
+  font-family: var(--sans);
+  font-size: var(--t-micro);
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--faint);
+  margin: 0;
+}
+
+/* ---------------- footer ---------------- */
+
+.ghost {
+  display: inline-block;
+  margin: clamp(2.4rem, 5vw, 4rem) 0 0;
+  font-family: var(--sans);
+  font-weight: 300;
+  font-size: clamp(1.2rem, calc(1.2rem + 22 * var(--slope)), 2.6rem);
+  letter-spacing: 0.02em;
+  color: transparent;
+  -webkit-text-stroke: 1px rgba(var(--fg-rgb), 0.45);
+  text-decoration: none;
+  pointer-events: auto;
+  transition: color 0.5s var(--ease-settle), -webkit-text-stroke-color 0.5s var(--ease-settle);
+}
+.ghost:hover {
+  color: var(--accent);
+  -webkit-text-stroke-color: transparent;
+}
+
+/* ---------------- reveals ---------------- */
+
+/* The hero copy arrives in two waves, after the object has finished
+   materialising. The headline and the lede come first, then the numbers and
+   the ask a beat later, so the specification reads as a consequence of having
+   been shown the lens rather than as part of the same slab of content. */
+body:not(.is-lit) .chapter--hero [data-reveal] { opacity: 0 !important; transform: translateY(1.4rem) !important; }
+body:not(.is-lit) .chapter--hero .line > i { transform: translateY(var(--mask-hide)) !important; }
+body:not(.is-lit) .chapter--hero .cue-rule { transform: scaleX(0) !important; }
+
+/* Act 3, second wave: the numbers count down the column, then the ask. */
+.hero-metrics > div,
+.pad--hero .cue {
+  opacity: 0;
+  transform: translateY(1.1rem);
+  transition: opacity 0.95s var(--ease-reveal), transform 0.95s var(--ease-reveal);
+}
+body.is-listed .hero-metrics > div,
+body.is-listed .pad--hero .cue { opacity: 1; transform: none; }
+
+/* No fade. A masked slide that also fades reads as an element appearing over
+   the object rather than coming out from behind it. */
+.hero-actions {
+  transform: translateY(calc(-100% - var(--reach) - 0.6rem));
+  transition: transform 1.15s var(--ease-reveal);
+}
+body.is-listed .hero-actions { transform: none; }
+body.is-listed .hero-metrics > div:nth-child(1) { transition-delay: 0.02s; }
+body.is-listed .hero-metrics > div:nth-child(2) { transition-delay: 0.055s; }
+body.is-listed .hero-metrics > div:nth-child(3) { transition-delay: 0.09s; }
+body.is-listed .hero-metrics > div:nth-child(4) { transition-delay: 0.125s; }
+body.is-listed .hero-metrics > div:nth-child(5) { transition-delay: 0.16s; }
+body.is-listed .hero-actions { transition-delay: 0.06s; }
+body.is-listed .pad--hero .cue { transition-delay: 0.22s; }
+
+[data-reveal] {
+  opacity: 0;
+  transform: translateY(1.4rem);
+  transition: opacity 0.85s var(--ease-reveal), transform 0.85s var(--ease-reveal);
+}
+.is-in [data-reveal],
+[data-reveal].is-in {
+  opacity: 1;
+  transform: none;
+}
+.is-in [data-reveal]:nth-of-type(2) { transition-delay: 0.08s; }
+.is-in [data-reveal]:nth-of-type(3) { transition-delay: 0.16s; }
+
+.noscript {
+  position: relative;
+  z-index: 9;
+  padding: var(--gutter);
+  font-family: var(--sans);
+  font-size: 0.8rem;
+  color: var(--fg);
+}
+
+/* ---------------- narrow ----------------
+   A portrait frame needs a different composition, not a shrunken one: copy
+   moves to the lower third over the object instead of beside it. */
+@media (max-width: 900px), (max-aspect-ratio: 1.15/1) {
+  .hero-body { grid-template-columns: minmax(0, 1fr); gap: clamp(1.4rem, 4vw, 2rem); }
+  .hero-copy--left, .hero-copy--right {
+    grid-column: 1; max-width: 100%; justify-self: start; transform: translateY(2rem);
+  }
+  .ticker { height: clamp(8rem, 20vh, 12rem); }
+  .hero-actions-clip { margin-left: 0; margin-right: auto; }
+  /* Five columns of numbers do not survive a phone; they pair up instead. */
+  .hero-metrics { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .hero-metrics > div { border-left: none; padding-left: 0; border-top: 1px solid var(--rule); }
+  .hero-metrics > div:nth-child(-n+2) { border-top: none; }
+  .hero-metrics > div:last-child { grid-column: 1 / -1; }
+
+  .pad--left, .pad--right, .pad--centre {
+    justify-content: flex-end;
+    align-items: flex-start;
+    text-align: left;
+    padding-bottom: clamp(4rem, 12vh, 8rem);
+  }
+  .pad--right .specs > div { flex-direction: row; }
+  .pad--right .specs dd { text-align: right; }
+  .pad--figure .body { columns: 1; }
+  .specs--row { grid-template-columns: minmax(0, 1fr); }
+  .specs--row > div { flex-direction: row; align-items: baseline; }
+  .pad--left > *, .pad--right > * { max-width: 100%; }
+  .specs { grid-template-columns: minmax(0, 1fr); }
+  .specs > div:nth-last-child(-n+2) { border-bottom: none; }
+  .specs > div:last-child { border-bottom: 1px solid var(--rule); }
+  .callouts { display: none; }   /* labels cannot land cleanly at this width */
+  /* The top bar costs no horizontal room, so unlike the old vertical scale it
+     survives at narrow widths. */
+
+  .pad--inside { justify-content: space-between; padding-bottom: clamp(3rem, 9vh, 6rem); }
+  .legend {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    column-gap: clamp(1rem, 4vw, 2rem);
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    width: 100%;
+  }
+  .legend li {
+    display: flex;
+    align-items: baseline;
+    gap: 0.55rem;
+    padding: 0.42rem 0;
+    border-top: 1px solid var(--rule);
+    font-family: var(--sans);
+    font-size: var(--t-micro);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    min-width: 0;
+  }
+  .legend b { color: var(--accent); font-weight: 500; }
+  .legend span { color: var(--muted); }
+  .legend em { color: var(--faint); font-style: normal; margin-left: auto; white-space: nowrap; }
+  .index li { flex-direction: row; gap: 1.2rem; }
+}
+
+/* ---------------- reduced motion ----------------
+   Drift, grain and slide-ups stop. The page becomes a set of arrived states
+   rather than a sequence of arrivals; nothing is hidden. */
+@media (prefers-reduced-motion: reduce) {
+  .grain { animation: none; opacity: 0.06; }
+  /* The turn becomes an instant state change, so nothing needs defocusing. */
+  .pad > *, .chrome > div { filter: none !important; opacity: 1 !important; }
+  .line > i { transform: none !important; transition: none !important; }
+  [data-reveal] { opacity: 1 !important; transform: none !important; transition: none !important; }
+  .cue-rule { transform: scaleX(1) !important; transition: none !important; }
+  .beat-card { opacity: var(--op, 1); }
+  .callout { transition: none !important; }
+  .rail-ticks li { transition: none !important; }
+  .hint-dot { animation: none; opacity: 0.7; }
+  .hero-metrics > div, .hero-actions, .pad--hero .cue,
+  .hero-actions-clip, .hero-copy--left .lede {
+    opacity: 1 !important; transform: none !important; transition: none !important; }
+  .ticker-track { animation: none !important; }
+  .cta, .cta::before { transition: none !important; }
+}
+
+
+/* ---------------- the cursor ----------------
+   A nine-sided iris — the same blade count as the lens's own — that stops down
+   and turns when you press, and opens over anything you can act on.
+
+   Two elements rather than one: the small mark sits exactly under the pointer
+   so aiming stays honest, and the iris lags behind it. A single lagging cursor
+   feels imprecise; a single exact one has no weight.
+
+   Only on real pointers, and only once JS has actually wired it — the native
+   cursor is never hidden on a page where the replacement might not appear. */
+@media (hover: hover) and (pointer: fine) {
+  body.has-cursor,
+  body.has-cursor * { cursor: none !important; }
+
+  .cursor,
+  .cursor-mark {
+    position: fixed;
+    top: 0;
+    left: 0;
+    z-index: 100;
+    pointer-events: none;
+    will-change: transform;
+  }
+  .cursor { width: 40px; height: 40px; margin: -20px 0 0 -20px; }
+  .cursor svg { width: 100%; height: 100%; overflow: visible; }
+  .cursor polygon {
+    fill: none;
+    stroke: rgba(var(--fg-rgb), 0.5);
+    stroke-width: 1;
+    vector-effect: non-scaling-stroke;
+    transition: stroke 0.3s var(--ease-settle), fill 0.3s var(--ease-settle);
+  }
+  .cursor-mark {
+    width: 3px; height: 3px; margin: -1.5px 0 0 -1.5px;
+    border-radius: 50%;
+    background: rgba(var(--fg-rgb), 0.85);
+    transition: opacity 0.25s var(--ease-settle), transform 0.25s var(--ease-settle);
+  }
+
+  /* Over something actionable: the iris opens and takes the accent, and the
+     aiming mark stands down because there is nothing left to aim at. */
+  body.cursor-open .cursor polygon { stroke: var(--accent); fill: rgba(var(--accent-rgb), 0.07); }
+  body.cursor-open .cursor-mark { opacity: 0; }
+
+  /* Pressed: stopped down. */
+  body.cursor-down .cursor polygon { stroke: var(--accent); fill: rgba(var(--accent-rgb), 0.14); }
+
+  .cursor, .cursor-mark { display: block; }
+}
+@media not all and (hover: hover) { .cursor, .cursor-mark { display: none; } }
+@media (prefers-reduced-motion: reduce) {
+  .cursor polygon, .cursor-mark { transition: none !important; }
+}

@@ -1,0 +1,358 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>NODAL — Series A 40mm T1.9</title>
+<meta name="description" content="A 40mm T1.9 cine prime where every surface exists because the light required it. Sharp wide open, never clinical.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Martian+Mono:wdth,wght@75..112.5,100..800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<div id="vh-probe" aria-hidden="true"></div>
+
+<!-- The pointer. Built by JS from the lens's own blade count. -->
+<div class="cursor" data-cursor aria-hidden="true"><svg viewBox="-20 -20 40 40"><polygon data-cursor-iris></polygon></svg></div>
+<div class="cursor-mark" data-cursor-mark aria-hidden="true"></div>
+
+<canvas id="stage" aria-hidden="true"></canvas>
+<div class="pool" aria-hidden="true"></div>
+<div class="grain" aria-hidden="true"></div>
+
+<!-- Persistent chrome. Not a header: fixed marks in the corners, so the page
+     never has a bar sitting on top of the object. -->
+<div class="chrome" aria-hidden="true">
+  <div class="chrome-tl">
+    <span class="mark">NODAL</span>
+    <span class="mark-sub">Optical Works</span>
+  </div>
+  <div class="chrome-tr">
+    <span data-spec="designation">Series A</span>
+  </div>
+  <div class="chrome-tc">
+    <span data-rail-now></span>
+  </div>
+</div>
+
+<!-- Progress: a bar across the top edge, ticked once per chapter. The native
+     scrollbar is hidden, so this is the only indicator on the page. JS places
+     the ticks from the sections themselves. -->
+<nav class="rail" aria-hidden="true">
+  <span class="rail-track"></span>
+  <ol class="rail-ticks" data-rail-ticks></ol>
+  <i class="rail-index" data-rail-index></i>
+</nav>
+
+<main>
+
+  <!-- ───────────────────────── 00 · HERO ─────────────────────────
+       Dead on the optical axis, tight enough that the front element fills the
+       frame. It opens black because you are looking into an unlit tube, which
+       is the honest state of that shot rather than a fade we invented. -->
+  <section class="chapter chapter--hero" data-chapter data-label="Cine prime">
+    <div class="pad pad--hero">
+
+      <!-- Two blocks flanking the object, arriving from the edge they sit on,
+           and a foot carrying the ask and the numbers. Nothing here repeats
+           anything else on the plate: the designation lives in the chrome, the
+           chapter name is suppressed, and the two copy blocks make different
+           arguments. -->
+      <div class="hero-body">
+        <div class="hero-copy hero-copy--left">
+          <!-- Two words, one per line, both at full foreground. A dimmed
+               setup line needs a setup word; "Wide open." has no spare word to
+               give away, so the value split comes off and the whole thing sits
+               forward. -->
+          <h1 class="display display--xl">
+            <span class="line" data-reveal-line>Wide</span>
+            <span class="line" data-reveal-line>open.</span>
+          </h1>
+
+          <!-- Fades in place. It used to open from zero height and shove the
+               headline upward, which meant the one fixed thing in the frame
+               moved every time the copy arrived. -->
+          <p class="lede">
+            The new Series A holds its corners, its contrast and its colour at full
+            aperture. There is no reason to close it.
+          </p>
+        </div>
+
+        <div class="hero-copy hero-copy--right">
+          <p class="tag">The rendering</p>
+          <!-- A slow vertical feed, masked to nothing at both ends so lines
+               arrive and leave rather than appearing and cutting off. The list
+               is duplicated once and the track travels exactly -50%, which is
+               what makes the loop seamless. -->
+          <div class="ticker">
+            <ul class="ticker-track" data-ticker>
+              <li>Sharp corner to corner, wide open</li>
+              <li>Focus that rolls rather than snaps</li>
+              <li>Under 1% breathing across the throw</li>
+              <li>Colour matched across the set</li>
+              <li>Highlights round off, never clip</li>
+              <li>Skin keeps its warmth at T1.9</li>
+              <li>Bokeh stays round to the frame edge</li>
+              <li>No focus shift down to T5.6</li>
+              <li>Flare is controlled, never sterile</li>
+              <li>Longitudinal colour under 4&thinsp;&micro;m</li>
+              <li>Ten elements in eight groups</li>
+              <li>300&deg; throw, geared at 0.8 module</li>
+              <li>One front diameter across the set</li>
+              <li>Holds contrast in backlight</li>
+              <li>Nine blades, round to T8</li>
+              <li>Distortion under 0.4% at the corner</li>
+              <li>Shimmable at the mount</li>
+              <li>1.4&thinsp;kg, balanced behind the rods</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <div class="hero-foot">
+        <!-- The clip the buttons slide out of. See .hero-actions-clip. -->
+        <div class="hero-actions-clip">
+          <div class="hero-actions">
+            <a class="cta cta--fill" href="mailto:optics@nodal.works">
+              <span>Order</span>
+            </a>
+            <a class="cta cta--ghost" href="mailto:optics@nodal.works?subject=Datasheet">
+              <span>Datasheet</span>
+            </a>
+          </div>
+        </div>
+
+        <!-- Drawn from the centre outward during act one, so the opening has
+             a second element besides the name and the frame gets an anchor
+             before anything else lands on it. -->
+        <span class="hero-rule" data-hero-rule aria-hidden="true"></span>
+
+        <dl class="hero-metrics">
+          <div><dd data-spec="tstopFull">&mdash;</dd><dt>Wide open</dt></div>
+          <div><dd data-spec="rms">&mdash;</dd><dt>Centre spot</dt></div>
+          <div><dd>100 %</dd><dt>Corner illumination</dt></div>
+          <div><dd>0.45 m</dd><dt>Close focus</dt></div>
+          <div><dd>PL &middot; LPL</dd><dt>Mount</dt></div>
+        </dl>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ───────────────────────── 01 · RENDERING ─────────────────────────
+       What a cinematographer actually buys: what it does to an image. -->
+  <section class="chapter chapter--object" data-chapter data-label="01 &mdash; Rendering">
+    <div class="pad pad--left">
+      <h2 class="title">
+        <span class="line" data-reveal-line>Sharp wide open.</span>
+        <span class="line accent" data-reveal-line>Never clinical.</span>
+      </h2>
+      <p class="body" data-reveal>
+        Wide open at T1.9 it resolves detail you can still grade, then lets go of it
+        gently. Focus rolls off instead of falling off a cliff, so faces sit inside the
+        frame rather than being cut out of it. The corners stay lit at full aperture.
+      </p>
+
+      <dl class="specs" data-reveal>
+        <div><dt>Wide open at</dt><dd data-spec="tstopFull">&mdash;</dd></div>
+        <div><dt>Centre spot, wide open</dt><dd data-spec="rms">&mdash;</dd></div>
+        <div><dt>Corner illumination</dt><dd>100 %</dd></div>
+        <div><dt>Close focus</dt><dd>0.45 m</dd></div>
+        <div><dt>Covers</dt><dd data-spec="circle">&mdash;</dd></div>
+        <div><dt>Angle of view</dt><dd data-spec="aov">&mdash;</dd></div>
+        <div><dt>Front diameter</dt><dd data-spec="frontdia">&mdash;</dd></div>
+        <div><dt>Mount</dt><dd>PL &middot; LPL</dd></div>
+      </dl>
+    </div>
+  </section>
+
+  <!-- ───────────────────────── 02 · BLANK BEAT ─────────────────────────
+       Two cards in one frame. The beat is the only chapter with room for a
+       statement — the object is small, lifted and pushed back — so the claim
+       that used to drift across the exploded view is made here instead, where
+       it has air. The swap is scrubbed by scroll, not triggered, so it reverses
+       exactly like everything else. -->
+  <section class="chapter chapter--beat" data-chapter data-label="02 &mdash; The cost">
+    <div class="pad pad--centre pad--beat">
+      <div class="beat-stack">
+        <div class="beat-card" data-beat="a">
+          <h2 class="display display--l">
+            <span class="line" data-reveal-line>Then you</span>
+            <span class="line accent" data-reveal-line>take it apart.</span>
+          </h2>
+          <p class="beat-sub">
+            Ten elements in eight groups. Not one of them is there to make up
+            the numbers.
+          </p>
+        </div>
+        <div class="beat-card" data-beat="b">
+          <h2 class="display display--l">
+            <span class="line" data-reveal-line>This is what</span>
+            <span class="line accent" data-reveal-line>T<span data-spec="tstop2">1.9</span> costs.</span>
+          </h2>
+          <p class="beat-sub">
+            Two anomalous-dispersion elements and a cemented triplet, carried so
+            the corners hold at full aperture.
+          </p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ───────────────────────── 03 · INSIDE (signature) ───────────────────────── -->
+  <section class="chapter chapter--explode" data-chapter data-label="03 &mdash; Inside">
+    <div class="pad pad--inside">
+      <!-- No headline and no eyebrow. The claim was made in the beat, the
+           chapter number lives in the top bar, and the page's best moment does
+           not need a caption sitting on top of it. -->
+
+      <!-- Element callouts. Positions are written by JS from the projected
+           screen position of each group, so a label always sits on its glass. -->
+      <ol class="legend" data-legend></ol>
+    </div>
+    <div class="callouts" data-callouts aria-hidden="true"></div>
+    <!-- The inspector. Filled and positioned from the group under the pointer
+         once the stack is fully open. -->
+    <div class="probe" data-probe aria-hidden="true"></div>
+  </section>
+
+  <!-- ───────────────────────── 04 · PROOF ───────────────────────── -->
+  <section class="chapter chapter--trace" data-chapter data-label="04 &mdash; Proof">
+    <div class="pad pad--figure">
+      <!-- "We can show you / the light." put a 15-character line over a
+           10-character one, and the orphaned "you" was doing the damage at
+           either end of the break. This says the same thing for a Proof
+           chapter and splits 12/11. -->
+      <h2 class="title">
+        <span class="line" data-reveal-line>We can prove</span>
+        <span class="line accent" data-reveal-line>every claim.</span>
+      </h2>
+      <p class="body" data-reveal>
+        Three bundles enter: one down the axis, one at two thirds of the field, one at
+        the corner. Each is refracted at the sphere of every surface it meets. This is
+        not an illustration of the light path. It is the light path.
+      </p>
+
+      <dl class="specs specs--stack" data-reveal>
+        <div><dt>Centre spot</dt><dd data-spec="rms">&mdash;</dd></div>
+        <div><dt>Focal plane</dt><dd data-spec="focus">&mdash;</dd></div>
+        <div><dt>Elements</dt><dd data-spec="elements">&mdash;</dd></div>
+      </dl>
+    </div>
+  </section>
+
+  <!-- ───────────────────────── 05 · THE SET ───────────────────────── -->
+  <section class="chapter chapter--series" data-chapter data-label="05 &mdash; The set">
+    <div class="pad pad--series">
+      <!-- "You don't buy one." was a riddle: it withholds the subject and
+           makes the reader solve for it. This states the situation first, and
+           the body then says what the matching actually buys you on the day. -->
+      <h2 class="title">
+        <span class="line" data-reveal-line>Nobody shoots</span>
+        <span class="line accent" data-reveal-line>with one lens.</span>
+      </h2>
+      <p class="body body--set" data-reveal>
+        So a prime is only as good as the ones beside it. Change focal length
+        mid-setup and nothing else moves: same T-stop, same colour, same 95mm
+        front, same gear positions. The lighting holds, the matte box stays on,
+        the focus marks stay good.
+      </p>
+      <ol class="index">
+        <li data-reveal data-set="0">
+          <span class="idx">01</span>
+          <div class="idx-body">
+            <h3>25mm</h3>
+            <p class="idx-meta">T1.9 &middot; 0.28m &middot; 95mm front</p>
+          </div>
+        </li>
+        <li data-reveal class="is-current" data-set="1">
+          <span class="idx">02</span>
+          <div class="idx-body">
+            <h3>40mm</h3>
+            <p class="idx-meta">T<span data-spec="tstop2">1.9</span> &middot; 0.45m &middot; 95mm front</p>
+          </div>
+        </li>
+        <li data-reveal data-set="2">
+          <span class="idx">03</span>
+          <div class="idx-body">
+            <h3>75mm</h3>
+            <p class="idx-meta">T2.1 &middot; 0.75m &middot; 95mm front</p>
+          </div>
+        </li>
+      </ol>
+      <!-- Filled and shown by JS on hover. See SET in src/main.js. -->
+      <div class="setcard" data-setcard aria-hidden="true"></div>
+    </div>
+  </section>
+
+  <!-- ───────────────────────── 06 · ENQUIRE ───────────────────────── -->
+  <section class="chapter chapter--end" data-chapter data-label="06 &mdash; Order">
+    <div class="pad pad--end">
+      <!-- The object stands dead centre so the glow behind it actually does
+           something, and the two columns flank it: the promise on the left,
+           the terms and the ask on the right. -->
+      <div class="end-body">
+        <div class="end-copy end-copy--left">
+          <h2 class="display display--l">
+            <span class="line" data-reveal-line>Available</span>
+            <span class="line accent" data-reveal-line>to order.</span>
+          </h2>
+          <p class="body body--end" data-reveal>
+            Built in batches of three and checked against its own prescription
+            before it leaves the bench. Every set ships with its measured data,
+            not a typical curve.
+          </p>
+        </div>
+
+        <div class="end-copy end-copy--right" data-reveal>
+          <p class="tag">Series A &middot; 40mm &middot; T<span data-spec="tstop2">1.9</span></p>
+          <p class="end-price"><span>From</span>&pound;14,500</p>
+          <dl class="specs specs--stack end-specs">
+            <div><dt>Matched set of three</dt><dd>&pound;39,500</dd></div>
+            <div><dt>Mount</dt><dd>PL &middot; LPL</dd></div>
+            <div><dt>Lead time</dt><dd>14 weeks</dd></div>
+            <div><dt>Ships with</dt><dd>Measured data</dd></div>
+          </dl>
+          <div class="end-actions">
+            <a class="cta cta--fill" href="mailto:optics@nodal.works?subject=Order%20%C2%B7%20Series%20A%2040mm">
+              <span>Order</span>
+            </a>
+            <a class="cta cta--ghost" href="mailto:optics@nodal.works?subject=Series%20A%2040mm">
+              <span>More info</span>
+            </a>
+          </div>
+        </div>
+      </div>
+
+      <!-- Below the whole row, not inside it. Pinned to the grid's end put it
+         at the foot of the ROW, which stops well above the standing lens, so
+         it landed across the barrel. Hrefs are placeholders. -->
+      <div class="end-social" data-reveal>
+        <ul class="social">
+          <li><a href="#">Instagram</a></li>
+          <li><a href="#">X</a></li>
+          <li><a href="#">LinkedIn</a></li>
+        </ul>
+        <a class="end-mail" href="mailto:optics@nodal.works">optics@nodal.works</a>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<noscript>
+  <p class="noscript">This page draws a lens from its optical prescription in real time, so it needs JavaScript.</p>
+</noscript>
+
+<script type="importmap">
+{
+  "imports": {
+    "three": "./vendor/three.module.js"
+  }
+}
+</script>
+<script type="module" src="./src/main.js"></script>
+</body>
+</html>

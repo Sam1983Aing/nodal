@@ -1,0 +1,11 @@
+.DS_Store
+
+# Built artefacts. Rebuild with tools/build-standalone.py, or take them from
+# the latest release. They are 1.5-2.3 MB each and would bloat the history.
+nodal-standalone.html
+nodal-standalone-clean.html
+
+# Local Claude Code tooling, not part of the project
+.claude/
+__pycache__/
+*.pyc
