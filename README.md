@@ -129,6 +129,24 @@ single byte.
 
 The physics was right in the first pass. Everything after that was presentation.
 
+## Building it yourself
+
+The whole page can be rebuilt from scratch, in order, without copying anything
+from this repo.
+
+- **[PROMPTS.md](PROMPTS.md)** — ten prompts to paste into Claude Code, one
+  after another, in an empty folder. Each one ends with a check so you know
+  whether to carry on. They are long on purpose: the tuned numbers in them are
+  the ones that cannot be guessed.
+- **[TEACHING-BRIEF.md](TEACHING-BRIEF.md)** — the same build described as nine
+  stages rather than as prompts, with the traps marked before you walk into
+  them.
+
+You will not get a pixel-for-pixel copy of this page, and nobody will. Two
+people running the same prompts get slightly different results, because you are
+describing something in words rather than running a build script. What you will
+get is every part of it, working.
+
 ## Notes before you reuse this
 
 - **The prices are invented.** £14,500, £39,500 and the 14 week lead time in the

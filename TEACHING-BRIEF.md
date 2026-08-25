@@ -81,9 +81,17 @@ sphere, and the solvers for focal length, back focus, focus distance and stop
 radius.
 
 **Verify:** print the spec sheet and check it against the design targets. It
-should solve to 40.0mm and T1.86. Then trace a 10 degree field and confirm it
-lands at 7.04mm, which is exactly `40 * tan(10)`. That number arriving on its own
-is the moment the series earns attention.
+should solve to 40.0mm and T1.86. Then trace a 10 degree field ray through the
+stop. It lands at 7.031mm, where a perfect lens would put it at `40 * tan(10)`
+= 7.053mm. That 0.3% gap is the lens's own distortion, and neither number was
+entered anywhere. It arriving on its own is the moment the series earns
+attention.
+
+Do not collapse the two figures into one. An earlier draft of this brief said
+the ray lands at 7.04mm "which is exactly `40 * tan(10)`", and both halves are
+wrong: the traced value is 7.031 and the ideal is 7.053. The difference between
+them is the whole point, so stating them as the same number throws the beat
+away. Verified against this repo's own `optics.js` run under Node.
 
 **Why first:** it is the only stage with an objectively right answer, and it
 proves the premise before a single pixel is drawn.
